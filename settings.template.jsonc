@@ -81,6 +81,10 @@
         "plot_loss": true,
         "fp16": true,
         "flash_attn": "fa2",
+        // 量化配置（用于 QLoRA 训练和推理）
+        // "quantization_bit": 4, // 量化位数: 4 或 8，设置后启用量化
+        // "quantization_type": "nf4", // 量化类型: "nf4" 或 "fp4"
+        // "double_quantization": true, // 是否使用双量化
         // "deepspeed": "ds_config.json" //多卡训练
     },
     "infer_args": {

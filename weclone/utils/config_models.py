@@ -163,7 +163,7 @@ class MakeDatasetArgs(BaseConfigModel):
     )
     clean_batch_size: int = Field(10, description="Batch size for data cleaning")
     vision_api: VisionApiConfig = Field(VisionApiConfig())
-
+    pure_text: bool = Field(False, description="Whether to use pure text mode (disable vision encoder)")  # 添加这一行
 
 class TrainSftArgs(BaseConfigModel):
     stage: str = Field("sft", description="Training stage")
@@ -190,6 +190,11 @@ class TrainSftArgs(BaseConfigModel):
     plot_loss: bool = Field(True, description="Whether to plot loss curve")
     fp16: bool = Field(True, description="Whether to use fp16")
     flash_attn: str = Field("fa2", description="Flash Attention type")
+    load_in_4bit: Optional[bool] = Field(None)
+    load_in_8bit: Optional[bool] = Field(None)
+    quantization_bit: Optional[int] = Field(None)  # 用于 QLoRA 等
+    double_quantization: Optional[bool] = Field(None)
+    quantization_type: Optional[str] = Field(None)  # "nf4" 或 "fp4"
     preprocessing_num_workers: int = Field(16, description="Number of preprocessing worker processes")
     dataloader_num_workers: int = Field(4, description="Number of dataloader worker processes")
     deepspeed: Optional[str] = Field(
@@ -207,6 +212,14 @@ class InferArgs(BaseConfigModel):
 
 class VllmArgs(BaseConfigModel):
     gpu_memory_utilization: float = Field(default=0.9, description="vllm GPU memory utilization")
+    # 显式补充常用的 vLLM 参数，用于 offline_infer 等场景
+    data_parallel_size: Optional[int] = Field(default=None, description="vLLM tensor parallel size")
+    quantization: Optional[str] = Field(
+        default=None, description="Quantization method, e.g. 'bitsandbytes', 'awq', 'gptq'"
+    )
+    load_format: Optional[str] = Field(
+        default=None, description="Format for loading weights, e.g. 'bitsandbytes', 'awq', 'gptq'"
+    )
 
 
 class TestModelArgs(BaseConfigModel):
@@ -234,10 +247,24 @@ class WcConfig(BaseModel):
     test_model_args: TestModelArgs = Field(TestModelArgs())
 
 
+# WCInferConfig 用于 ChatModel 推理，只包含 HfArgumentParser 支持的量化参数
 class WCInferConfig(CommonArgs, InferArgs):
-    """Final configuration model for Web Demo"""
+    """Final configuration model for Web Demo / API Service (based on LLaMA-Factory ChatModel)"""
 
-    pass
+    # LLaMA-Factory 推理支持的量化参数
+    # 注意：ChatModel 不支持 load_in_4bit/load_in_8bit，使用 quantization_bit 代替
+    quantization_bit: Optional[int] = Field(
+        default=None, 
+        description="Quantization bit (4 or 8) for on-the-fly quantization with bitsandbytes"
+    )
+    quantization_type: Optional[str] = Field(
+        default="nf4", 
+        description="Quantization type: 'nf4' or 'fp4' for 4-bit quantization"
+    )
+    double_quantization: Optional[bool] = Field(
+        default=True, 
+        description="Whether to use double quantization for 4-bit quantization"
+    )
 
 
 class WCTrainSftConfig(CommonArgs, TrainSftArgs, CommonMethods):

@@ -54,8 +54,20 @@ def create_config_by_arg_type(arg_type: str, wc_config: WcConfig) -> BaseModel:
 
     common_config = wc_config.common_args.model_dump()
 
+    # web_demo 和 api_service 基于 ChatModel，传递量化参数
     if arg_type == "web_demo" or arg_type == "api_service":
-        config_dict = {**common_config, **wc_config.infer_args.model_dump()}
+        # 从 train_sft_args 中提取量化参数
+        train_sft_dict = wc_config.train_sft_args.model_dump()
+        quant_keys = ["quantization_bit", "quantization_type", "double_quantization"]
+        train_quant = {
+            k: v for k, v in train_sft_dict.items()
+            if k in quant_keys and v is not None
+        }
+        config_dict = {
+            **common_config,
+            **wc_config.infer_args.model_dump(),
+            **train_quant
+        }
         return WCInferConfig(**config_dict)
 
     elif arg_type == "vllm":
@@ -66,12 +78,16 @@ def create_config_by_arg_type(arg_type: str, wc_config: WcConfig) -> BaseModel:
 
     elif arg_type == "train_sft":
         common_config["include_type"] = wc_config.make_dataset_args.include_type
-        config_dict = {**common_config, **wc_config.train_sft_args.model_dump()}
+        
+        # 合并所有训练参数
+        train_dict = wc_config.train_sft_args.model_dump()
+        # 训练时保留所有量化参数（包括 load_in_4bit/load_in_8bit 用于 QLoRA）
+        
+        config_dict = {**common_config, **train_dict}
         return WCTrainSftConfig(**config_dict)
 
     elif arg_type == "make_dataset":
         make_dataset_config = wc_config.make_dataset_args.model_dump()
-        # TODO: Should the following three parameters be moved to common?
         train_sft_args = wc_config.train_sft_args
         extra_values = {
             "dataset": train_sft_args.dataset,

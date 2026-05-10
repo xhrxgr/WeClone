@@ -58,7 +58,7 @@ def create_config_by_arg_type(arg_type: str, wc_config: WcConfig) -> BaseModel:
     if arg_type == "web_demo" or arg_type == "api_service":
         # 从 train_sft_args 中提取量化参数
         train_sft_dict = wc_config.train_sft_args.model_dump()
-        quant_keys = ["quantization_bit", "quantization_type", "double_quantization"]
+        quant_keys = ["quantization_method", "quantization_bit", "quantization_type", "double_quantization"]
         train_quant = {
             k: v for k, v in train_sft_dict.items()
             if k in quant_keys and v is not None

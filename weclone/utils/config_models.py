@@ -192,6 +192,7 @@ class TrainSftArgs(BaseConfigModel):
     flash_attn: str = Field("fa2", description="Flash Attention type")
     load_in_4bit: Optional[bool] = Field(None)
     load_in_8bit: Optional[bool] = Field(None)
+    quantization_method: Optional[str] = Field(None)  # "bnb", "hqq", "eetq"
     quantization_bit: Optional[int] = Field(None)  # 用于 QLoRA 等
     double_quantization: Optional[bool] = Field(None)
     quantization_type: Optional[str] = Field(None)  # "nf4" 或 "fp4"
@@ -253,6 +254,10 @@ class WCInferConfig(CommonArgs, InferArgs):
 
     # LLaMA-Factory 推理支持的量化参数
     # 注意：ChatModel 不支持 load_in_4bit/load_in_8bit，使用 quantization_bit 代替
+    quantization_method: Optional[str] = Field(
+        default="bnb", 
+        description="Quantization method: 'bnb' (bitsandbytes), 'hqq', 'eetq'"
+    )
     quantization_bit: Optional[int] = Field(
         default=None, 
         description="Quantization bit (4 or 8) for on-the-fly quantization with bitsandbytes"
